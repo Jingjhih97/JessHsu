@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-JessHsuApplication<JessHsu>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.works.JessHsu.JessHsuApplication",
+            "projectName": "JessHsu",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
