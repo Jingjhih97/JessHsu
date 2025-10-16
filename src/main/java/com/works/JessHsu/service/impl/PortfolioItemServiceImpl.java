@@ -1,3 +1,4 @@
+// src/main/java/com/works/JessHsu/service/impl/PortfolioItemServiceImpl.java
 package com.works.JessHsu.service.impl;
 
 import org.springframework.data.domain.Page;
@@ -8,10 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.works.JessHsu.dto.PortfolioItemCreateDTO;
 import com.works.JessHsu.dto.PortfolioItemDTO;
 import com.works.JessHsu.entity.PortfolioItem;
+import com.works.JessHsu.exception.NotFoundException;
 import com.works.JessHsu.mapper.PortfolioItemMapper;
 import com.works.JessHsu.repository.PortfolioItemRepository;
 import com.works.JessHsu.service.PortfolioItemService;
-
 
 @Service
 @Transactional
@@ -31,15 +32,17 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
     @Override
     public PortfolioItemDTO update(Long id, PortfolioItemCreateDTO dto) {
         PortfolioItem e = repo.findById(id)
-        .orElseThrow(() -> new RuntimeException("Item not found"));
+                .orElseThrow(() -> new NotFoundException("PortfolioItem " + id + " not found"));
         PortfolioItemMapper.updateEntity(e, dto);
         return PortfolioItemMapper.toDTO(repo.save(e));
     }
 
     @Override
     public void delete(Long id) {
-        if (!repo.existsById(id))
-            throw new RuntimeException("Item not found");
+        // 先確認存在，不存在直接 404
+        if (!repo.existsById(id)) {
+            throw new NotFoundException("PortfolioItem " + id + " not found");
+        }
         repo.deleteById(id);
     }
 
@@ -48,17 +51,19 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
     public PortfolioItemDTO get(Long id) {
         return repo.findById(id)
                 .map(PortfolioItemMapper::toDTO)
-                .orElseThrow(() -> new RuntimeException("Item not found"));
+                .orElseThrow(() -> new NotFoundException("PortfolioItem " + id + " not found"));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<PortfolioItemDTO> list(Pageable pageable, Boolean onlyPublished, String category) {
         if (Boolean.TRUE.equals(onlyPublished) && category != null && !category.isBlank()) {
-            return repo.findByCategoryAndPublishedTrue(category, pageable).map(PortfolioItemMapper::toDTO);
+            return repo.findByCategoryAndPublishedTrue(category, pageable)
+                    .map(PortfolioItemMapper::toDTO);
         }
         if (Boolean.TRUE.equals(onlyPublished)) {
-            return repo.findByPublishedTrue(pageable).map(PortfolioItemMapper::toDTO);
+            return repo.findByPublishedTrue(pageable)
+                    .map(PortfolioItemMapper::toDTO);
         }
         return repo.findAll(pageable).map(PortfolioItemMapper::toDTO);
     }

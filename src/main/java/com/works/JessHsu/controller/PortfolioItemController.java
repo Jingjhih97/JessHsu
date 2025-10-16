@@ -20,7 +20,7 @@ import com.works.JessHsu.service.PortfolioItemService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/portfolioItems")
+@RequestMapping("/api/portfolio-items")
 public class PortfolioItemController {
 
     private final PortfolioItemService service;
