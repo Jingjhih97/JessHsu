@@ -13,14 +13,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.works.JessHsu.dto.PortfolioCardDTO;
 import com.works.JessHsu.dto.PortfolioItemCreateDTO;
 import com.works.JessHsu.dto.PortfolioItemDTO;
+import com.works.JessHsu.dto.PortfolioItemDetailDTO;
 import com.works.JessHsu.service.PortfolioItemService;
 
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/portfolio-items")
+@RequestMapping("/api/portfolioItems")
 public class PortfolioItemController {
 
     private final PortfolioItemService service;
@@ -60,5 +62,26 @@ public class PortfolioItemController {
         String[] s = sort.split(",");
         Sort by = (s.length == 2) ? Sort.by(Sort.Direction.fromString(s[1]), s[0]) : Sort.by(s[0]);
         return service.list(PageRequest.of(page, size, by), onlyPublished, category);
+    }
+
+    @GetMapping("/cards")
+    public Page<PortfolioCardDTO> listCards(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "createdAt,desc") String sort,
+            @RequestParam(required = false) Boolean onlyPublished,
+            @RequestParam(required = false) String category) {
+
+        String[] s = sort.split(",");
+        Sort by = (s.length == 2)
+                ? Sort.by(Sort.Direction.fromString(s[1]), s[0])
+                : Sort.by(s[0]);
+
+        return service.listCards(PageRequest.of(page, size, by), onlyPublished, category);
+    }
+
+    @GetMapping("/{id}/detail")
+    public PortfolioItemDetailDTO detail(@PathVariable Long id) {
+        return service.getDetail(id);
     }
 }

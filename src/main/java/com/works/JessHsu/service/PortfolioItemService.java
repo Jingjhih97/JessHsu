@@ -1,4 +1,3 @@
-// src/main/java/com/works/JessHsu/service/PortfolioItemService.java
 package com.works.JessHsu.service;
 
 import java.util.List;
@@ -12,6 +11,7 @@ import com.works.JessHsu.dto.PortfolioImageDTO;
 import com.works.JessHsu.dto.PortfolioImageOrderUpdateDTO;
 import com.works.JessHsu.dto.PortfolioItemCreateDTO;
 import com.works.JessHsu.dto.PortfolioItemDTO;
+import com.works.JessHsu.dto.PortfolioItemDetailDTO;
 
 public interface PortfolioItemService {
 
@@ -33,8 +33,7 @@ public interface PortfolioItemService {
      */
     Page<PortfolioCardDTO> listCards(Pageable pageable, Boolean onlyPublished, String category);
 
-    /* ----------------- 新增：圖片管理（方案 B） ----------------- */
-
+    /* ----------------- 圖片管理（方案B） ----------------- */
     List<PortfolioImageDTO> listImages(Long itemId);
 
     PortfolioImageDTO addImage(Long itemId, PortfolioImageCreateDTO dto);
@@ -46,4 +45,7 @@ public interface PortfolioItemService {
     void reorderImages(Long itemId, List<PortfolioImageOrderUpdateDTO> orders);
 
     void setPublished(Long itemId, boolean published);
+
+    /* ----------------- 新增：作品詳細頁 ----------------- */
+    PortfolioItemDetailDTO getDetail(Long id);
 }
