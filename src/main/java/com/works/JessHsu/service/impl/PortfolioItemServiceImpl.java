@@ -13,7 +13,6 @@ import com.works.JessHsu.dto.PortfolioItemCreateDTO;
 import com.works.JessHsu.dto.PortfolioItemDTO;
 import com.works.JessHsu.dto.PortfolioItemDetailDTO;
 import com.works.JessHsu.entity.PortfolioItem;
-import com.works.JessHsu.entity.PortfolioItemImage;
 import com.works.JessHsu.exception.NotFoundException;
 import com.works.JessHsu.mapper.PortfolioItemMapper;
 import com.works.JessHsu.repository.PortfolioItemImageRepository;
@@ -21,7 +20,8 @@ import com.works.JessHsu.repository.PortfolioItemRepository;
 import com.works.JessHsu.repository.view.PortfolioCardView;
 import com.works.JessHsu.service.PortfolioItemService;
 
-
+@Service
+@Transactional
 public class PortfolioItemServiceImpl implements PortfolioItemService {
 
     private final PortfolioItemRepository repo;
@@ -37,35 +37,32 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
 
     @Override
     public PortfolioItemDTO create(PortfolioItemCreateDTO dto) {
-        PortfolioItem e = PortfolioItemMapper.toEntity(dto);
-        e = itemRepo.save(e);
-        return PortfolioItemMapper.toDTO(e);
+        PortfolioItem e = (PortfolioItem) PortfolioItemMapper.toEntity(dto);
+        return PortfolioItemMapper.toDTO(repo.save(e));
     }
 
     @Override
     public PortfolioItemDTO update(Long id, PortfolioItemCreateDTO dto) {
-        PortfolioItem e = itemRepo.findById(id)
+        PortfolioItem e = repo.findById(id)
                 .orElseThrow(() -> new NotFoundException("PortfolioItem " + id + " not found"));
         PortfolioItemMapper.updateEntity(e, dto);
-        e = itemRepo.save(e);
-        return PortfolioItemMapper.toDTO(e);
+        return PortfolioItemMapper.toDTO(repo.save(e));
     }
 
     @Override
     public void delete(Long id) {
-        // 先確認存在，不存在直接 404
         if (!repo.existsById(id)) {
             throw new NotFoundException("PortfolioItem " + id + " not found");
         }
-        itemRepo.deleteById(id);
+        repo.deleteById(id);
     }
 
     @Override
     @Transactional(readOnly = true)
     public PortfolioItemDTO get(Long id) {
-        PortfolioItem e = itemRepo.findById(id)
+        return repo.findById(id)
+                .map(PortfolioItemMapper::toDTO)
                 .orElseThrow(() -> new NotFoundException("PortfolioItem " + id + " not found"));
-        return PortfolioItemMapper.toDTO(e);
     }
 
     @Override
