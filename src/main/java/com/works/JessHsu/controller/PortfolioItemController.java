@@ -1,4 +1,3 @@
-// src/main/java/com/works/JessHsu/controller/PortfolioItemController.java
 package com.works.JessHsu.controller;
 
 import org.springframework.data.domain.Page;
@@ -10,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import com.works.JessHsu.dto.PortfolioCardDto;
 import com.works.JessHsu.dto.PortfolioItemCreateDTO;
 import com.works.JessHsu.dto.PortfolioItemDTO;
-import com.works.JessHsu.dto.PortfolioItemDetailDTO; // ★ 新增：作品詳細 DTO
+import com.works.JessHsu.dto.PortfolioItemDetailDTO;
 import com.works.JessHsu.service.PortfolioItemService;
 
 import jakarta.validation.Valid;
@@ -21,29 +20,15 @@ public class PortfolioItemController {
 
     private final PortfolioItemService service;
 
-    public PortfolioItemController(PortfolioItemService service) {
+    public class PortfolioItemController {
         this.service = service;
     }
-
-    /* ----------------- CRUD ----------------- */
 
     @PostMapping
     public PortfolioItemDTO create(@Valid @RequestBody PortfolioItemCreateDTO dto) {
         return service.create(dto);
-    }
 
-    @PutMapping("/{id}")
-    public PortfolioItemDTO update(@PathVariable Long id, @Valid @RequestBody PortfolioItemCreateDTO dto) {
-        return service.update(id, dto);
-    }
-
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
-        service.delete(id);
-    }
-
-    @GetMapping("/{id}")
-    public PortfolioItemDTO get(@PathVariable Long id) {
+public class PortfolioItemController {
         return service.get(id);
     }
 
@@ -73,12 +58,11 @@ public class PortfolioItemController {
     @GetMapping
     public Page<PortfolioItemDTO> list(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size,
-            @RequestParam(defaultValue = "createdAt,desc") String sort,
+
+public class PortfolioItemController {
             @RequestParam(required = false) Boolean onlyPublished,
             @RequestParam(required = false) String category) {
-
-        int p = Math.max(0, page);
+int p = Math.max(0, page);
         int sz = Math.max(1, size);
 
         String[] parts = sort.split(",");
@@ -97,4 +81,4 @@ public class PortfolioItemController {
 
         return service.list(PageRequest.of(p, sz, by), onlyPublished, category);
     }
-}
+    
