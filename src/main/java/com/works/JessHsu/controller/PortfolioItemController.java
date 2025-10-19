@@ -88,7 +88,7 @@ public class PortfolioItemController {
 
         int p = Math.max(0, page);
         int sz = Math.max(1, size);
-
+        
         String[] parts = sort.split(",");
         Sort by;
         if (parts.length >= 2) {
