@@ -1,30 +1,26 @@
+// src/main/java/com/works/JessHsu/config/CorsConfig.java
 package com.works.JessHsu.config;
+
+import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 public class CorsConfig {
 
     @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/api/**")
-                        // 允許來源（建議用 allowedOriginPatterns，更彈性）
-                        .allowedOriginPatterns("http://localhost:5173", "http://localhost:3000")
-                        // 允許方法
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-                        // 允許所有標頭
-                        .allowedHeaders("*")
-                        // 是否允許攜帶 Cookie / Authorization
-                        .allowCredentials(true)
-                        // 預檢請求的快取時間（秒）
-                        .maxAge(3600);
-            }
-        };
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration c = new CorsConfiguration();
+        c.setAllowedOrigins(List.of("http://localhost:5173")); // 你的前端位址
+        c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+        c.setAllowedHeaders(List.of("*"));
+        c.setAllowCredentials(false); // 你目前不帶 Cookie/憑證
+        UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
+        s.registerCorsConfiguration("/**", c);
+        return s;
     }
 }

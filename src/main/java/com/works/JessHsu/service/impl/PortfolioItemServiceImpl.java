@@ -1,12 +1,12 @@
 package com.works.JessHsu.service.impl;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 import com.works.JessHsu.dto.PortfolioCardDto;
 import com.works.JessHsu.dto.PortfolioImageCreateDTO;
@@ -40,8 +40,12 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
 
     @Override
     public PortfolioItemDTO create(PortfolioItemCreateDTO dto) {
-        PortfolioItem entity = PortfolioItemMapper.toEntity(dto); 
-        PortfolioItem saved = repo.<PortfolioItem>save(entity);
+        PortfolioItem entity = PortfolioItemMapper.toEntity(dto);
+        PortfolioItem saved = repo.save(entity);
+
+        // ★ 同步 coverImageUrl 到 images 表並設為主圖
+        syncCoverToImages(saved.getId(), dto.getCoverImageUrl());
+
         return PortfolioItemMapper.toDTO(saved);
     }
 
@@ -49,8 +53,17 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
     public PortfolioItemDTO update(Long id, PortfolioItemCreateDTO dto) {
         PortfolioItem e = repo.findById(id)
                 .orElseThrow(() -> new NotFoundException("PortfolioItem " + id + " not found"));
+
+        // 先更新作品本身
         PortfolioItemMapper.updateEntity(e, dto);
-        return PortfolioItemMapper.toDTO(repo.save(e));
+        PortfolioItem saved = repo.save(e);
+
+        // ★ 若有 coverImageUrl，亦同步到 images 表並設為主圖
+        if (dto.getCoverImageUrl() != null) {
+            syncCoverToImages(saved.getId(), dto.getCoverImageUrl());
+        }
+
+        return PortfolioItemMapper.toDTO(saved);
     }
 
     @Override
@@ -133,7 +146,6 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
     @Override
     @Transactional(readOnly = true)
     public List<PortfolioImageDTO> listImages(Long itemId) {
-        // 只驗證存在，不載入整個 entity
         if (!repo.existsById(itemId)) {
             throw new NotFoundException("PortfolioItem " + itemId + " not found");
         }
@@ -158,7 +170,6 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
         img.setItem(item);
         img.setImageUrl(dto.getImageUrl());
 
-        // sort_order 連到最後
         Integer maxSort = imageRepo.findMaxSort(itemId);
         int nextSort = (maxSort == null ? -1 : maxSort) + 1;
         img.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : nextSort);
@@ -168,7 +179,6 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
 
         img = imageRepo.save(img);
 
-        // 若本張設為主圖，清掉同作品其它主圖
         if (wantPrimary) {
             imageRepo.clearOtherPrimary(itemId, img.getId());
         }
@@ -228,5 +238,48 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
                 .orElseThrow(() -> new NotFoundException("PortfolioItem " + itemId + " not found"));
         item.setPublished(published);
         repo.save(item);
+    }
+
+    /* ====================== 私有：同步 cover 到 images ====================== */
+
+    private void syncCoverToImages(Long itemId, String coverUrl) {
+        if (itemId == null) return;
+        if (coverUrl == null) return;
+
+        String url = coverUrl.trim();
+        if (url.isEmpty()) return;
+
+        // 若不存在 => 新增並設為主圖
+        if (!imageRepo.existsByItem_IdAndImageUrl(itemId, url)) {
+            Integer maxSort = imageRepo.findMaxSort(itemId);
+            int nextSort = (maxSort == null ? -1 : maxSort) + 1;
+
+            PortfolioItem itemRef = repo.findById(itemId)
+                    .orElseThrow(() -> new NotFoundException("PortfolioItem " + itemId + " not found"));
+
+            PortfolioItemImage img = new PortfolioItemImage();
+            img.setItem(itemRef);
+            img.setImageUrl(url);
+            img.setSortOrder(nextSort);
+            img.setIsPrimary(true);
+            img = imageRepo.save(img);
+
+            imageRepo.clearOtherPrimary(itemId, img.getId());
+            return;
+        }
+
+        // 已存在 => 設為主圖（找出該筆）
+        List<PortfolioItemImage> all = imageRepo.findByItem_IdOrderByIsPrimaryDescSortOrderAscIdAsc(itemId);
+        PortfolioItemImage target = all.stream()
+                .filter(i -> Objects.equals(i.getImageUrl(), url))
+                .findFirst()
+                .orElse(null);
+        if (target != null) {
+            imageRepo.clearOtherPrimary(itemId, target.getId());
+            if (!Boolean.TRUE.equals(target.getIsPrimary())) {
+                target.setIsPrimary(true);
+                imageRepo.save(target);
+            }
+        }
     }
 }
