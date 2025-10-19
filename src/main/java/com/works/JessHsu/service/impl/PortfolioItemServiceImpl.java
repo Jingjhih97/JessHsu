@@ -1,27 +1,40 @@
 // src/main/java/com/works/JessHsu/service/impl/PortfolioItemServiceImpl.java
 package com.works.JessHsu.service.impl;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.works.JessHsu.dto.PortfolioCardDto;
+import com.works.JessHsu.dto.PortfolioImageDTO;
 import com.works.JessHsu.dto.PortfolioItemCreateDTO;
 import com.works.JessHsu.dto.PortfolioItemDTO;
+import com.works.JessHsu.dto.PortfolioItemDetailDTO;
 import com.works.JessHsu.entity.PortfolioItem;
 import com.works.JessHsu.exception.NotFoundException;
 import com.works.JessHsu.mapper.PortfolioItemMapper;
+import com.works.JessHsu.repository.PortfolioItemImageRepository;
 import com.works.JessHsu.repository.PortfolioItemRepository;
+import com.works.JessHsu.repository.view.PortfolioCardView;
 import com.works.JessHsu.service.PortfolioItemService;
 
 @Service
 @Transactional
 public class PortfolioItemServiceImpl implements PortfolioItemService {
-    private final PortfolioItemRepository repo;
 
-    public PortfolioItemServiceImpl(PortfolioItemRepository repo) {
+    private final PortfolioItemRepository repo;
+    private final PortfolioItemImageRepository imageRepo;
+
+    // ✅ 手動建構子注入（無 Lombok）
+    public PortfolioItemServiceImpl(PortfolioItemRepository repo, PortfolioItemImageRepository imageRepo) {
         this.repo = repo;
+        this.imageRepo = imageRepo;
     }
+
+    /* ----------------- CRUD ----------------- */
 
     @Override
     public PortfolioItemDTO create(PortfolioItemCreateDTO dto) {
@@ -39,7 +52,6 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
 
     @Override
     public void delete(Long id) {
-        // 先確認存在，不存在直接 404
         if (!repo.existsById(id)) {
             throw new NotFoundException("PortfolioItem " + id + " not found");
         }
@@ -66,5 +78,54 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
                     .map(PortfolioItemMapper::toDTO);
         }
         return repo.findAll(pageable).map(PortfolioItemMapper::toDTO);
+    }
+
+    /* ----------------- Cards (前台卡片牆用) ----------------- */
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PortfolioCardDto> listCards(Pageable pageable, Boolean onlyPublished, String category) {
+        Page<PortfolioCardView> page = repo.searchCardsNative(onlyPublished, category, pageable);
+        return page.map(v -> new PortfolioCardDto(
+                v.getId(),
+                v.getTitle(),
+                v.getCategory(),
+                v.getCoverImageUrl(),
+                v.getCreatedAt() == null ? null : v.getCreatedAt().toLocalDateTime()
+        ));
+    }
+
+    /* ----------------- Detail (前台作品詳細頁) ----------------- */
+
+    @Override
+    @Transactional(readOnly = true)
+    public PortfolioItemDetailDTO getDetail(Long id) {
+        // 取得作品
+        PortfolioItem item = repo.findById(id)
+                .orElseThrow(() -> new NotFoundException("PortfolioItem " + id + " not found"));
+
+        // 取得圖片（主圖優先）
+        var images = imageRepo.findByItem_IdOrderByIsPrimaryDescSortOrderAscIdAsc(id);
+
+        List<PortfolioImageDTO> imageDTOs = images.stream()
+                .map(i -> new PortfolioImageDTO(
+                        i.getId(),
+                        item.getId(),
+                        i.getImageUrl(),
+                        Boolean.TRUE.equals(i.getIsPrimary()),
+                        i.getSortOrder(),
+                        i.getCreatedAt()))
+                .toList();
+
+        return new PortfolioItemDetailDTO(
+                item.getId(),
+                item.getTitle(),
+                item.getDescription(),
+                item.getCategory(),
+                item.getPublished(),
+                item.getCreatedAt(),
+                item.getUpdatedAt(),
+                imageDTOs
+        );
     }
 }

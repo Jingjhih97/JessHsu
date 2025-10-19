@@ -2,12 +2,7 @@ package com.works.JessHsu.dto;
 
 import java.time.LocalDateTime;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 
-
-@NoArgsConstructor
-@AllArgsConstructor
 public class PortfolioItemDTO {
     private Long id;
     private String title;
@@ -17,6 +12,20 @@ public class PortfolioItemDTO {
     private Boolean published;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public PortfolioItemDTO() {
+    }
+
+    public PortfolioItemDTO(String category, String coverImageUrl, LocalDateTime createdAt, String description, Long id, Boolean published, String title, LocalDateTime updatedAt) {
+        this.category = category;
+        this.coverImageUrl = coverImageUrl;
+        this.createdAt = createdAt;
+        this.description = description;
+        this.id = id;
+        this.published = published;
+        this.title = title;
+        this.updatedAt = updatedAt;
+    }
 
     public Long getId() {
         return id;
