@@ -1,4 +1,3 @@
-// src/main/java/com/works/JessHsu/controller/PortfolioItemController.java
 package com.works.JessHsu.controller;
 
 import org.springframework.data.domain.Page;
@@ -88,7 +87,7 @@ public class PortfolioItemController {
 
         int p = Math.max(0, page);
         int sz = Math.max(1, size);
-        
+
         String[] parts = sort.split(",");
         Sort by;
         if (parts.length >= 2) {

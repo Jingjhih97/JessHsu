@@ -7,30 +7,42 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "portfolio_items")
 public class PortfolioItem {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** 作品標題 */
     @Column(nullable = false, length = 100)
     private String title;
 
-    @Column(length = 500)
+    /** 作品描述 */
+    @Column(length = 10000)
     private String description;
 
+    /** 封面圖片 URL */
     @Column(length = 255)
     private String coverImageUrl;
 
+    /** 作品分類 */
     @Column(length = 100)
     private String category;
 
+    /** 是否上架 */
     private Boolean published = false;
 
+    /** 顯示順序（用於排序與遞補） */
+    @Column(name = "display_order", nullable = false)
+    private Integer displayOrder = 0;
+
+    /** 建立與更新時間 */
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime updatedAt = LocalDateTime.now();
 
@@ -45,11 +57,20 @@ public class PortfolioItem {
         this.title = title;
     }
 
+    @PrePersist
+    public void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        updatedAt = LocalDateTime.now();
+    }
+
     @PreUpdate
     public void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
 
+    // --- Getter & Setter ---
     public Long getId() {
         return id;
     }
@@ -96,6 +117,14 @@ public class PortfolioItem {
 
     public void setPublished(Boolean published) {
         this.published = published;
+    }
+
+    public Integer getDisplayOrder() {
+        return displayOrder;
+    }
+
+    public void setDisplayOrder(Integer displayOrder) {
+        this.displayOrder = displayOrder;
     }
 
     public LocalDateTime getCreatedAt() {
