@@ -3,6 +3,7 @@ package com.works.JessHsu.mapper;
 import com.works.JessHsu.dto.PortfolioItemCreateDTO;
 import com.works.JessHsu.dto.PortfolioItemDTO;
 import com.works.JessHsu.entity.PortfolioItem;
+import com.works.JessHsu.entity.PortfolioItemImage;
 
 public class PortfolioItemMapper {
     public static PortfolioItem toEntity(PortfolioItemCreateDTO dto) {
@@ -38,6 +39,15 @@ public class PortfolioItemMapper {
         d.setPublished(e.getPublished());
         d.setCreatedAt(e.getCreatedAt());
         d.setUpdatedAt(e.getUpdatedAt());
+
+        PortfolioItemImage cover = e.getCoverItemImage();
+        if (cover != null) {
+            d.setCoverCropX(cover.getCropX());
+            d.setCoverCropY(cover.getCropY());
+            d.setCoverCropSize(cover.getCropSize());
+        }
+
         return d;
+
     }
 }

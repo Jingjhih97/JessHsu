@@ -10,6 +10,9 @@ public class PortfolioImageDTO {
     private Boolean isPrimary;
     private Integer sortOrder;
     private LocalDateTime createdAt;
+    private Integer cropX;
+    private Integer cropY;
+    private Integer cropSize;
 
     public PortfolioImageDTO() {}
 
@@ -40,4 +43,28 @@ public class PortfolioImageDTO {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public Integer getCropX() {
+        return cropX;
+    }
+
+    public void setCropX(Integer cropX) {
+        this.cropX = cropX;
+    }
+
+    public Integer getCropY() {
+        return cropY;
+    }
+
+    public void setCropY(Integer cropY) {
+        this.cropY = cropY;
+    }
+
+    public Integer getCropSize() {
+        return cropSize;
+    }
+
+    public void setCropSize(Integer cropSize) {
+        this.cropSize = cropSize;
+    }
 }

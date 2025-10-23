@@ -189,19 +189,24 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
     @Override
     @Transactional(readOnly = true)
     public List<PortfolioImageDTO> listImages(Long itemId) {
-        if (!repo.existsById(itemId)) {
+        if (!repo.existsById(itemId))
             throw new NotFoundException("PortfolioItem " + itemId + " not found");
-        }
         return imageRepo.findByItem_IdOrderByIsPrimaryDescSortOrderAscIdAsc(itemId)
                 .stream()
-                .map(i -> new PortfolioImageDTO(
-                        i.getId(),
-                        itemId,
-                        i.getImageUrl(),
-                        Boolean.TRUE.equals(i.getIsPrimary()),
-                        i.getSortOrder(),
-                        i.getCreatedAt()))
-                .toList();
+                .map(i -> {
+                    PortfolioImageDTO d = new PortfolioImageDTO();
+                    d.setId(i.getId());
+                    d.setItemId(itemId);
+                    d.setImageUrl(i.getImageUrl());
+                    d.setIsPrimary(Boolean.TRUE.equals(i.getIsPrimary()));
+                    d.setSortOrder(i.getSortOrder());
+                    d.setCreatedAt(i.getCreatedAt());
+                    // ✅ 補上裁剪
+                    d.setCropX(i.getCropX());
+                    d.setCropY(i.getCropY());
+                    d.setCropSize(i.getCropSize());
+                    return d;
+                }).toList();
     }
 
     @Override
@@ -446,8 +451,6 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
                 java.nio.file.Files.deleteIfExists(p);
             }
         } catch (Exception ex) {
-            // 依需求：可記 log，不要讓刪檔失敗中斷主要流程
-            // log.warn("Delete old file failed: {}", oldUrl, ex);
         }
     }
 

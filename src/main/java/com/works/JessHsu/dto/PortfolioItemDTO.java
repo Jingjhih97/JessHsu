@@ -2,7 +2,6 @@ package com.works.JessHsu.dto;
 
 import java.time.LocalDateTime;
 
-
 public class PortfolioItemDTO {
     private Long id;
     private String title;
@@ -12,11 +11,15 @@ public class PortfolioItemDTO {
     private Boolean published;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Integer coverCropX;
+    private Integer coverCropY;
+    private Integer coverCropSize;
 
     public PortfolioItemDTO() {
     }
 
-    public PortfolioItemDTO(String category, String coverImageUrl, LocalDateTime createdAt, String description, Long id, Boolean published, String title, LocalDateTime updatedAt) {
+    public PortfolioItemDTO(String category, String coverImageUrl, LocalDateTime createdAt, String description, Long id,
+            Boolean published, String title, LocalDateTime updatedAt) {
         this.category = category;
         this.coverImageUrl = coverImageUrl;
         this.createdAt = createdAt;
@@ -91,6 +94,28 @@ public class PortfolioItemDTO {
         this.updatedAt = updatedAt;
     }
 
-    
+    public Integer getCoverCropX() {
+        return coverCropX;
+    }
+
+    public void setCoverCropX(Integer coverCropX) {
+        this.coverCropX = coverCropX;
+    }
+
+    public Integer getCoverCropY() {
+        return coverCropY;
+    }
+
+    public void setCoverCropY(Integer coverCropY) {
+        this.coverCropY = coverCropY;
+    }
+
+    public Integer getCoverCropSize() {
+        return coverCropSize;
+    }
+
+    public void setCoverCropSize(Integer coverCropSize) {
+        this.coverCropSize = coverCropSize;
+    }
 
 }
