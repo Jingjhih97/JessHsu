@@ -135,8 +135,14 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PortfolioItemDTO> list(Pageable pageable, Boolean onlyPublished, String category) {
-        return repo.search(onlyPublished, category, pageable).map(PortfolioItemMapper::toDTO);
+    public Page<PortfolioItemDTO> list(Pageable pageable, Boolean onlyPublished, String category, String q) {
+        // 正規化關鍵字：null 或空字串都當成不過濾
+        String qq = (q == null) ? null : q.trim();
+        if (qq != null && qq.isEmpty())
+            qq = null;
+
+        Page<PortfolioItem> page = repo.search(onlyPublished, category, qq, pageable);
+        return page.map(PortfolioItemMapper::toDTO);
     }
 
     /* ======================= Cards (前台) ======================= */

@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,11 +40,41 @@ public class AdminPortfolioItemController {
 
     /* === CRUD === */
     @GetMapping
-    public Page<PortfolioItemDTO> list(@RequestParam(defaultValue = "0") int page,
+    public Page<PortfolioItemDTO> list(
+            @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Boolean onlyPublished,
-            @RequestParam(required = false) String category) {
-        return service.list(PageRequest.of(page, size), onlyPublished, category);
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String q) {
+        Sort s = resolveSort(sort);
+        PageRequest pr = PageRequest.of(page, size, s);
+        return service.list(pr, onlyPublished, category, q);
+    }
+
+    private Sort resolveSort(String sort) {
+        // 預設：displayOrder DESC, createdAt DESC（兩個欄位）
+        Sort fallback = Sort.by(
+                Sort.Order.desc("displayOrder"),
+                Sort.Order.desc("createdAt"));
+        if (sort == null || sort.isBlank())
+            return fallback;
+
+        String[] parts = sort.split(",");
+        String prop = parts[0].trim();
+        String dir = (parts.length > 1 ? parts[1].trim().toLowerCase() : "desc");
+
+        // 白名單避免注入
+        java.util.Set<String> allow = java.util.Set.of("displayOrder", "createdAt", "id", "title", "category");
+        if (!allow.contains(prop))
+            return fallback;
+
+        Sort one = "asc".equals(dir) ? Sort.by(prop).ascending() : Sort.by(prop).descending();
+        // 次要排序固定補上 createdAt DESC，避免相等時不穩定跳動
+        if (!"createdAt".equals(prop)) {
+            one = one.and(Sort.by("createdAt").descending());
+        }
+        return one;
     }
 
     @GetMapping("/{id}")

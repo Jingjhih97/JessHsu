@@ -23,7 +23,7 @@ public interface PortfolioItemService {
     PortfolioItemDTO update(Long id, PortfolioItemCreateDTO dto);
     void delete(Long id);
     PortfolioItemDTO get(Long id);
-    Page<PortfolioItemDTO> list(Pageable pageable, Boolean onlyPublished, String category);
+    Page<PortfolioItemDTO> list(Pageable pageable, Boolean onlyPublished, String category, String q);
 
     // 詳細頁
     PortfolioItemDetailDTO getDetail(Long id);
