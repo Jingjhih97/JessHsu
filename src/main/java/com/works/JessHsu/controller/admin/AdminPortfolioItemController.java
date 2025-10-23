@@ -1,6 +1,7 @@
 package com.works.JessHsu.controller.admin;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.works.JessHsu.dto.ImageUpsertDTO;
 import com.works.JessHsu.dto.PortfolioImageCreateDTO;
+import com.works.JessHsu.dto.PortfolioImageCropDTO;
 import com.works.JessHsu.dto.PortfolioImageDTO;
 import com.works.JessHsu.dto.PortfolioImageOrderUpdateDTO;
 import com.works.JessHsu.dto.PortfolioItemCreateDTO;
@@ -37,9 +40,9 @@ public class AdminPortfolioItemController {
     /* === CRUD === */
     @GetMapping
     public Page<PortfolioItemDTO> list(@RequestParam(defaultValue = "0") int page,
-                                       @RequestParam(defaultValue = "10") int size,
-                                       @RequestParam(required = false) Boolean onlyPublished,
-                                       @RequestParam(required = false) String category) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Boolean onlyPublished,
+            @RequestParam(required = false) String category) {
         return service.list(PageRequest.of(page, size), onlyPublished, category);
     }
 
@@ -93,5 +96,30 @@ public class AdminPortfolioItemController {
     @PutMapping("/{id}/images/reorder")
     public void reorderImages(@PathVariable Long id, @RequestBody List<PortfolioImageOrderUpdateDTO> orders) {
         service.reorderImages(id, orders);
+    }
+
+    @PutMapping("/{id}/images/{imageId}")
+    public void updateImage(
+            @PathVariable("id") Long itemId,
+            @PathVariable Long imageId,
+            @RequestBody Map<String, String> body) {
+        String newUrl = body.get("imageUrl");
+        if (newUrl == null || newUrl.isBlank()) {
+            throw new IllegalArgumentException("imageUrl cannot be blank");
+        }
+        service.updateImageUrl(itemId, imageId, newUrl);
+    }
+
+    @PutMapping("/{id}/images/{imageId}/crop")
+    public void updateImageCrop(
+            @PathVariable("id") Long itemId,
+            @PathVariable Long imageId,
+            @RequestBody PortfolioImageCropDTO crop) {
+        service.updateImageCrop(itemId, imageId, crop);
+    }
+
+    @PutMapping("/{id}/images")
+    public void replaceImages(@PathVariable Long id, @RequestBody List<ImageUpsertDTO> images) {
+        service.replaceImages(id, images);
     }
 }

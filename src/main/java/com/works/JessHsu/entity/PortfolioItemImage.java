@@ -27,6 +27,15 @@ public class PortfolioItemImage {
     @JoinColumn(name = "item_id", nullable = false)
     private PortfolioItem item;
 
+    @Column(name = "crop_x")
+    private Integer cropX; // 裁切框左上角 (px, 以原圖自然像素計)
+
+    @Column(name = "crop_y")
+    private Integer cropY;
+
+    @Column(name = "crop_size")
+    private Integer cropSize; // 正方形邊長 (px, 自然像素)
+
     @Column(name = "image_url", nullable = false, length = 500)
     private String imageUrl;
 
@@ -41,7 +50,8 @@ public class PortfolioItemImage {
     private LocalDateTime createdAt;
 
     // ---- Constructors ----
-    public PortfolioItemImage() {}
+    public PortfolioItemImage() {
+    }
 
     public PortfolioItemImage(PortfolioItem item, String imageUrl, Boolean isPrimary, Integer sortOrder) {
         this.item = item;
@@ -89,5 +99,29 @@ public class PortfolioItemImage {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public Integer getCropX() {
+        return cropX;
+    }
+
+    public void setCropX(Integer v) {
+        this.cropX = v;
+    }
+
+    public Integer getCropY() {
+        return cropY;
+    }
+
+    public void setCropY(Integer v) {
+        this.cropY = v;
+    }
+
+    public Integer getCropSize() {
+        return cropSize;
+    }
+
+    public void setCropSize(Integer v) {
+        this.cropSize = v;
     }
 }

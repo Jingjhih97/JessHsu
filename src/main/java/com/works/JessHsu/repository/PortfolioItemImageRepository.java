@@ -42,4 +42,6 @@ public interface PortfolioItemImageRepository extends JpaRepository<PortfolioIte
 
     /** ✅ 取得同作品、指定 URL 的那一筆（用來設為主圖） */
     Optional<PortfolioItemImage> findByItem_IdAndImageUrl(Long itemId, String imageUrl);
+
+    long countByImageUrl(String imageUrl);
 }

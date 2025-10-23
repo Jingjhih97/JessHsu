@@ -1,3 +1,4 @@
+// UploadController.java
 package com.works.JessHsu.controller;
 
 import java.nio.file.Files;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder; // ⭐ 新增
 
 import net.coobird.thumbnailator.Thumbnails;
 
@@ -20,7 +22,6 @@ import net.coobird.thumbnailator.Thumbnails;
 @RequestMapping("/api/uploads")
 public class UploadController {
 
-  /** 專案根目錄底下的 uploads；已用 WebMvcConfigurer 映射為 /uploads/** 可公開讀取 */
   private final String uploadDir = "uploads";
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -41,26 +42,31 @@ public class UploadController {
     Path originalPath = Path.of(uploadDir, originalName);
     Files.copy(file.getInputStream(), originalPath, StandardCopyOption.REPLACE_EXISTING);
 
-    // 2) 產 web 版（長/寬不超過 1600、品質 0.85）
+    // 2) web 版
     String webName = base + "-web." + ext;
     Path webPath = Path.of(uploadDir, webName);
     try (var in = Files.newInputStream(originalPath); var out = Files.newOutputStream(webPath)) {
       Thumbnails.of(in).size(1600, 1600).outputQuality(0.85).toOutputStream(out);
     }
 
-    // 3) 產縮圖（長/寬不超過 400、品質 0.8）
+    // 3) 縮圖
     String thumbName = base + "-thumb." + ext;
     Path thumbPath = Path.of(uploadDir, thumbName);
     try (var in = Files.newInputStream(originalPath); var out = Files.newOutputStream(thumbPath)) {
       Thumbnails.of(in).size(400, 400).outputQuality(0.8).toOutputStream(out);
     }
 
-    // 4) 回傳網址（保持相容：url 直接給 web 版）
-    String originalUrl  = "/uploads/" + originalName;
-    String webUrl       = "/uploads/" + webName;
-    String thumbnailUrl = "/uploads/" + thumbName;
+    // 4) 建立「相對路徑」
+    String originalRel  = "/uploads/" + originalName;
+    String webRel       = "/uploads/" + webName;
+    String thumbnailRel = "/uploads/" + thumbName;
 
-    return new UploadResp(webUrl, originalUrl, thumbnailUrl);
+    // 5) 轉為「絕對 URL」
+    String originalUrl  = ServletUriComponentsBuilder.fromCurrentContextPath().path(originalRel).toUriString();
+    String url          = ServletUriComponentsBuilder.fromCurrentContextPath().path(webRel).toUriString();
+    String thumbnailUrl = ServletUriComponentsBuilder.fromCurrentContextPath().path(thumbnailRel).toUriString();
+
+    return new UploadResp(url, originalUrl, thumbnailUrl);
   }
 
   public record UploadResp(String url, String originalUrl, String thumbnailUrl) {}

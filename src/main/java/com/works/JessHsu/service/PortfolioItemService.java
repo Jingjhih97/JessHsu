@@ -6,8 +6,10 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.works.JessHsu.dto.ImageUpsertDTO;
 import com.works.JessHsu.dto.PortfolioCardDto;
 import com.works.JessHsu.dto.PortfolioImageCreateDTO;
+import com.works.JessHsu.dto.PortfolioImageCropDTO;
 import com.works.JessHsu.dto.PortfolioImageDTO;
 import com.works.JessHsu.dto.PortfolioImageOrderUpdateDTO;
 import com.works.JessHsu.dto.PortfolioItemCreateDTO;
@@ -41,4 +43,10 @@ public interface PortfolioItemService {
 
     /** 🔹 新增這個方法，對應 setPublished() 控制上架/下架 */
     void setPublished(Long itemId, boolean published);
+
+    void updateImageUrl(Long itemId, Long imageId, String newUrl);
+
+    void updateImageCrop(Long itemId, Long imageId, PortfolioImageCropDTO crop);
+
+    void replaceImages(Long itemId, List<ImageUpsertDTO> images);
 }
