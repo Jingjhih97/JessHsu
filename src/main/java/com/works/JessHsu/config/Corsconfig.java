@@ -1,4 +1,3 @@
-// src/main/java/com/works/JessHsu/config/CorsConfig.java
 package com.works.JessHsu.config;
 
 import java.util.List;
@@ -9,6 +8,11 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+/**
+ * 給瀏覽器用的 CORS 規則
+ * - 允許 localhost:5173 走跨域 AJAX
+ * - 允許帶 cookie (session)
+ */
 @Configuration
 public class CorsConfig {
 
@@ -16,27 +20,29 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
 
-        // 用 EXACT origin（不能用 * 且要含 port）
-        c.setAllowedOrigins(List.of("http://localhost:5173"));
+        // 允許的前端 origin，要精準列出，有幾個就列幾個
+        c.setAllowedOrigins(List.of(
+            "http://localhost:5173",
+            "http://localhost:3000"
+        ));
 
-        // 允許你會用到的方法
+        // 允許的方法
         c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
 
-        // 允許的自訂 header（至少要包含 Authorization、Content-Type）
+        // 允許攜帶的 request headers
         c.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
 
-        // 若你有需要在前端讀取 Location 等 header，可曝露：
+        // 回應時哪些 header 可以被瀏覽器 JS 讀到（可加可不加）
         c.setExposedHeaders(List.of("Location"));
 
-        // 只有在你要帶 cookie（withCredentials=true）時設為 true；否則 false 也可以
-        // 你目前用 Basic Auth（放在 Authorization header），不是 cookie，
-        // 所以不需要 credentials；保持 false 也 OK
-        c.setAllowCredentials(false);
+        // 關鍵：要讓 cookie (JSESSIONID) 可以跨域傳遞
+        c.setAllowCredentials(true);
 
-        // 預檢結果快取（秒）
+        // 預檢快取秒數
         c.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
+        // 套用到後端全部 API
         s.registerCorsConfiguration("/**", c);
         return s;
     }
