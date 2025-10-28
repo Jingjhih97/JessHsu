@@ -1,5 +1,6 @@
 package com.works.JessHsu.security;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -7,84 +8,70 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
 /**
- * 管理「同一個 IP 嘗試登入」的狀態：
- * - 連續失敗次數
- * - 是否被鎖住
- * - 什麼時候解鎖
+ * 以 IP 為 key 的爆破防護：
+ * - 5 次錯誤就鎖 10 分鐘
+ * - 鎖定中直接擋
+ * - 每次失敗有一點點 delay
  */
 @Component
 public class LoginAttemptService {
 
-    // 允許錯幾次
-    private static final int MAX_FAILS = 5;
-
-    // 鎖多久（秒）：這裡 10 分鐘
-    private static final long LOCK_SECONDS = 10 * 60;
-
-    // 用 IP 當 key 的記錄表
-    private final Map<String, AttemptInfo> attempts = new ConcurrentHashMap<>();
+    private static final int MAX_FAILS = 5;            // 允許最多 5 次錯誤
+    private static final long LOCK_SECONDS = 10 * 60;  // 鎖 10 分鐘
 
     private static class AttemptInfo {
-        int failCount; // 累積失敗次數
-        Instant lockUntil; // 若被鎖，鎖到什麼時刻
+        int failCount = 0;
+        Instant lockUntil = null;
+        Instant lastFailAt = null;
     }
 
-    /** 該 IP 是否目前被鎖 */
-    public boolean isLocked(String ip) {
+    private final Map<String, AttemptInfo> attempts = new ConcurrentHashMap<>();
+
+    /** 呼叫於「嘗試登入之前」，檢查這個 IP 是否被鎖 */
+    public long checkLockedAndGetRemainingSeconds(String ip) {
         AttemptInfo info = attempts.get(ip);
-        return info != null
-                && info.lockUntil != null
-                && Instant.now().isBefore(info.lockUntil);
+        if (info == null || info.lockUntil == null) return 0L;
+
+        Instant now = Instant.now();
+        if (now.isBefore(info.lockUntil)) {
+            return Duration.between(now, info.lockUntil).getSeconds();
+        } else {
+            // 鎖已過期 → 自動解鎖歸零
+            attempts.remove(ip);
+            return 0L;
+        }
     }
 
-    /** 取得還要鎖多久（秒），沒鎖就回 0 */
-    public long lockRemainingSeconds(String ip) {
-        AttemptInfo info = attempts.get(ip);
-        if (info == null || info.lockUntil == null)
-            return 0;
-        long diff = info.lockUntil.getEpochSecond() - Instant.now().getEpochSecond();
-        return Math.max(diff, 0);
-    }
-
-    /** 登入失敗：+1，必要時進入鎖定狀態 */
-    public void recordFailure(String ip) {
-        AttemptInfo info = attempts.computeIfAbsent(ip, _k -> new AttemptInfo());
+    /** 登入失敗時呼叫：計數 + 視情況上鎖 */
+    public void recordFail(String ip) {
+        AttemptInfo info = attempts.computeIfAbsent(ip, k -> new AttemptInfo());
         info.failCount++;
+        info.lastFailAt = Instant.now();
 
         if (info.failCount >= MAX_FAILS) {
             info.lockUntil = Instant.now().plusSeconds(LOCK_SECONDS);
         }
+
+        // 簡單阻斷爆破: 隨失敗次數增加一點點延遲 (0.5s ~ 2s)
+        try {
+            long sleepMillis = Math.min(info.failCount * 500L, 2000L);
+            Thread.sleep(sleepMillis);
+        } catch (InterruptedException ignored) {}
     }
 
-    /** 登入成功：清空這個 IP 的紀錄（歸零） */
+    /** 登入成功就重置這個 IP 的紀錄 */
     public void recordSuccess(String ip) {
         attempts.remove(ip);
     }
 
-    /**
-     * 根據目前 fail 次數計算一個「延遲毫秒數」。
-     * 目的：讓爆力嘗試很慢，但正常使用者體感還可以。
-     *
-     * 設計：
-     * - 0~1次失敗：0ms
-     * - 2次失敗：500ms
-     * - 3次失敗：1000ms
-     * - 4次失敗以上：2000ms
-     *
-     * 你可以自由調整。
-     */
-    public long suggestedDelayMillis(String ip) {
+    /** 回傳目前錯誤次數（0~5+） */
+    public int getFailCount(String ip) {
         AttemptInfo info = attempts.get(ip);
-        if (info == null)
-            return 0;
+        return (info == null ? 0 : info.failCount);
+    }
 
-        int c = info.failCount;
-        if (c <= 1)
-            return 0;
-        if (c == 2)
-            return 500;
-        if (c == 3)
-            return 1000;
-        return 2000;
+    /** 回傳鎖定門檻（目前是 5） */
+    public int getMaxFails() {
+        return MAX_FAILS;
     }
 }
