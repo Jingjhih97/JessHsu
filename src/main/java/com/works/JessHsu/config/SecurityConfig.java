@@ -2,40 +2,51 @@ package com.works.JessHsu.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 
-/**
- * 我們目前不用 Spring Security 內建的使用者系統 / 授權規則，
- * 授權交給 AdminAuthInterceptor 來做 session 檢查。
- *
- * 這裡主要做：
- * - 關 CSRF (前後端分離 + AJAX)
- * - 開 CORS （實際 CORS 規則來自 CorsConfig）
- * - 把 httpBasic / formLogin 關掉，避免 Spring 自動跳 Basic auth 視窗
- */
+import com.works.JessHsu.security.AdminAuthFilter;
+import com.works.JessHsu.security.AdminSessionStore;
+
 @Configuration
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            // 我們用自己的 CorsConfig，這裡啟用 security 端的 cors 支援即可
-            .cors(Customizer.withDefaults())
+    SecurityFilterChain securityFilterChain(HttpSecurity http, AdminSessionStore sessionStore) throws Exception {
 
-            // 前後端分離 + session cookie，先關 CSRF
+        http
+            .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
 
-            // 目前所有 request 都 allow，真正的 /api/admin/** 保護在 AdminAuthInterceptor
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/**").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // 前台公開
+                .requestMatchers(
+                        "/uploads/**",
+                        "/api/portfolioItems/**"
+                ).permitAll()
+
+                // 後台登入 API 可以匿名呼叫
+                .requestMatchers("/api/admin/auth/login").permitAll()
+
+                // 其他照樣先 permitAll
+                .anyRequest().permitAll()
             )
 
-            // 關掉 Security 自己的登入機制
+            // 關掉預設表單/Basic，不要彈出瀏覽器登入框
             .httpBasic(basic -> basic.disable())
             .formLogin(form -> form.disable())
             .logout(logout -> logout.disable());
+
+        // 把我們自訂 Bearer token filter 插在 Spring Security 的 anonymous 之前
+        http.addFilterBefore(
+            new AdminAuthFilter(sessionStore),
+            AnonymousAuthenticationFilter.class
+        );
 
         return http.build();
     }
