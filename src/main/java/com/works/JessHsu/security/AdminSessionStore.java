@@ -8,8 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 
 /**
- * 管理後台用的 Bearer token，
- * 保存在記憶體，不進資料庫。
+ * 管理後台用的 Bearer token。
+ * 記憶體版：重啟伺服器就清空。
  */
 @Component
 public class AdminSessionStore {
@@ -26,9 +26,10 @@ public class AdminSessionStore {
     }
 
     /**
-     * 建立 token，回傳 token 字串
+     * 建立一個新的 Bearer token，並存起來。
+     * @return 產生的 token 字串
      */
-    public String createSessionFor(Long adminId) {
+    public String issueToken(Long adminId) {
         String token = UUID.randomUUID().toString().replace("-", "");
 
         SessionRecord r = new SessionRecord();
@@ -41,17 +42,18 @@ public class AdminSessionStore {
     }
 
     /**
-     * 檢查 token 是否存在且未過期
-     * 回傳 adminId；如果失效回 null
+     * 用 token 換 adminId。
+     * - token 不存在 → 回 null
+     * - token 過期 → 刪掉並回 null
      */
-    public Long validate(String token) {
+    public Long resolve(String token) {
         if (token == null || token.isBlank()) return null;
 
         SessionRecord r = sessions.get(token);
         if (r == null) return null;
 
-        // 過期了 -> 移除
         if (Instant.now().isAfter(r.expiresAt)) {
+            // 過期就清掉，避免記憶體一直長
             sessions.remove(token);
             return null;
         }
@@ -60,11 +62,18 @@ public class AdminSessionStore {
     }
 
     /**
-     * 主動登出：讓 token 失效
+     * 主動讓某個 token 失效 (登出)
      */
     public void invalidate(String token) {
-        if (token != null) {
+        if (token != null && !token.isBlank()) {
             sessions.remove(token);
         }
+    }
+
+    /**
+     * 回傳目前 TTL（秒），看你要不要用在回應給前端。
+     */
+    public long getTtlSeconds() {
+        return TTL_SECONDS;
     }
 }

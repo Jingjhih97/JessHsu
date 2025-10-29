@@ -32,6 +32,7 @@ import com.works.JessHsu.exception.NotFoundException;
 import com.works.JessHsu.mapper.PortfolioItemMapper;
 import com.works.JessHsu.repository.PortfolioItemImageRepository;
 import com.works.JessHsu.repository.PortfolioItemRepository;
+import com.works.JessHsu.repository.ThemeRepository;
 import com.works.JessHsu.repository.view.PortfolioCardView;
 import com.works.JessHsu.service.PortfolioItemService;
 
@@ -43,10 +44,15 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
 
     private final PortfolioItemRepository repo;
     private final PortfolioItemImageRepository imageRepo;
+    private final ThemeRepository themeRepo;
 
-    public PortfolioItemServiceImpl(PortfolioItemRepository repo, PortfolioItemImageRepository imageRepo) {
+    public PortfolioItemServiceImpl(
+            PortfolioItemRepository repo,
+            PortfolioItemImageRepository imageRepo,
+            ThemeRepository themeRepo) {
         this.repo = repo;
         this.imageRepo = imageRepo;
+        this.themeRepo = themeRepo;
     }
 
     /* ==================== 封面規則 / 同步 ==================== */
@@ -81,17 +87,23 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
     public PortfolioItemDTO create(PortfolioItemCreateDTO dto) {
         PortfolioItem entity = PortfolioItemMapper.toEntity(dto);
 
-        // 新作品置前
+        if (dto.getThemeId() != null) {
+            var theme = themeRepo.findById(dto.getThemeId())
+                    .orElseThrow(() -> new NotFoundException("Theme " + dto.getThemeId() + " not found"));
+            entity.setTheme(theme);
+        } else {
+            entity.setTheme(null);
+        }
+
+        // 排序邏輯照舊
         Integer maxOrder = repo.findMaxDisplayOrder();
         int nextOrder = (maxOrder == null ? 0 : maxOrder) + 1;
         entity.setDisplayOrder(nextOrder);
 
         PortfolioItem saved = repo.save(entity);
 
-        // 一次寫入封面/圖片
+        // 圖片 + 封面
         upsertImagesFromDtos(saved.getId(), dto.getCoverImageUrl(), dto.getImages());
-
-        // 建立後重算封面
         recomputeCover(saved.getId());
 
         return PortfolioItemMapper.toDTO(saved);
@@ -102,15 +114,25 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
         PortfolioItem e = repo.findById(id)
                 .orElseThrow(() -> new NotFoundException("PortfolioItem " + id + " not found"));
 
-        // 先只更新基本欄位（包含 coverImageUrl 文字本身），不動圖片/主圖
+        // 先更新基本欄位
         PortfolioItemMapper.updateEntity(e, dto);
+
+        // 🔥 更新 theme
+        if (dto.getThemeId() != null) {
+            var theme = themeRepo.findById(dto.getThemeId())
+                    .orElseThrow(() -> new NotFoundException("Theme " + dto.getThemeId() + " not found"));
+            e.setTheme(theme);
+        } else {
+            e.setTheme(null);
+        }
+
         PortfolioItem saved = repo.save(e);
 
-        // 僅當有傳入 images 時，才同步圖片（不使用 cover 作為主圖候選）
+        // 如果有傳 images，就同步圖片
         boolean touchedImages = (dto.getImages() != null && !dto.getImages().isEmpty());
         if (touchedImages) {
-            upsertImagesFromDtos(saved.getId(), null /* ←重要 */, dto.getImages());
-            recomputeCover(saved.getId()); // 只有真的改了圖片才重算封面
+            upsertImagesFromDtos(saved.getId(), null /* 不再用 cover 決主圖 */, dto.getImages());
+            recomputeCover(saved.getId());
         }
 
         return PortfolioItemMapper.toDTO(saved);
@@ -135,13 +157,25 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PortfolioItemDTO> list(Pageable pageable, Boolean onlyPublished, String category, String q) {
+    public Page<PortfolioItemDTO> list(
+            Pageable pageable,
+            Boolean onlyPublished,
+            String category,
+            Long themeId,
+            String q) {
         // 正規化關鍵字：null 或空字串都當成不過濾
         String qq = (q == null) ? null : q.trim();
-        if (qq != null && qq.isEmpty())
+        if (qq != null && qq.isEmpty()) {
             qq = null;
+        }
 
-        Page<PortfolioItem> page = repo.search(onlyPublished, category, qq, pageable);
+        Page<PortfolioItem> page = repo.search(
+                onlyPublished,
+                category,
+                qq,
+                themeId,
+                pageable);
+
         return page.map(PortfolioItemMapper::toDTO);
     }
 
@@ -149,8 +183,17 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PortfolioCardDto> listCards(Pageable pageable, Boolean onlyPublished, String category) {
-        Page<PortfolioCardView> page = repo.searchCardsNative(onlyPublished, category, pageable);
+    public Page<PortfolioCardDto> listCards(
+            Pageable pageable,
+            Boolean onlyPublished,
+            String category,
+            Long themeId) {
+        Page<PortfolioCardView> page = repo.searchCardsNative(
+                onlyPublished,
+                category,
+                themeId,
+                pageable);
+
         return page.map(v -> new PortfolioCardDto(
                 v.getId(),
                 v.getTitle(),
@@ -170,16 +213,23 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
         var images = imageRepo.findByItem_IdOrderByIsPrimaryDescSortOrderAscIdAsc(id);
 
         List<PortfolioImageDTO> imageDTOs = images.stream()
-                .map(i -> new PortfolioImageDTO(
-                        i.getId(),
-                        item.getId(),
-                        i.getImageUrl(),
-                        Boolean.TRUE.equals(i.getIsPrimary()),
-                        i.getSortOrder(),
-                        i.getCreatedAt()))
+                .map(i -> {
+                    PortfolioImageDTO d = new PortfolioImageDTO(
+                            i.getId(),
+                            item.getId(),
+                            i.getImageUrl(),
+                            Boolean.TRUE.equals(i.getIsPrimary()),
+                            i.getSortOrder(),
+                            i.getCreatedAt());
+                    // 如果你前端裁切預覽要用 cropX/cropY/cropSize，也可以在這裡塞
+                    d.setCropX(i.getCropX());
+                    d.setCropY(i.getCropY());
+                    d.setCropSize(i.getCropSize());
+                    return d;
+                })
                 .toList();
 
-        return new PortfolioItemDetailDTO(
+        PortfolioItemDetailDTO dto = new PortfolioItemDetailDTO(
                 item.getId(),
                 item.getTitle(),
                 item.getDescription(),
@@ -187,10 +237,13 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
                 item.getPublished(),
                 item.getCreatedAt(),
                 item.getUpdatedAt(),
-                imageDTOs);
-    }
+                imageDTOs,
+                item.getTheme() != null ? item.getTheme().getId() : null);
 
-    /* ===================== 圖片管理（後台） ===================== */
+        dto.setThemeId(item.getTheme() != null ? item.getTheme().getId() : null);
+
+        return dto;
+    } /* ===================== 圖片管理（後台） ===================== */
 
     @Override
     @Transactional(readOnly = true)

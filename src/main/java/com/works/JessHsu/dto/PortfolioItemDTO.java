@@ -9,6 +9,8 @@ public class PortfolioItemDTO {
     private String coverImageUrl;
     private String category;
     private Boolean published;
+    private Long themeId;
+    private String themeName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer coverCropX;
@@ -116,6 +118,22 @@ public class PortfolioItemDTO {
 
     public void setCoverCropSize(Integer coverCropSize) {
         this.coverCropSize = coverCropSize;
+    }
+
+    public Long getThemeId() {
+        return themeId;
+    }
+
+    public void setThemeId(Long themeId) {
+        this.themeId = themeId;
+    }
+
+    public String getThemeName() {
+        return themeName;
+    }
+
+    public void setThemeName(String themeName) {
+        this.themeName = themeName;
     }
 
 }

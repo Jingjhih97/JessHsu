@@ -27,19 +27,21 @@ public class PortfolioItemController {
 
     /* ----------- Cards (前台卡片牆) ----------- */
     @GetMapping("/cards")
-    public Page<PortfolioCardDto> listCards(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "12") int size,
-            @RequestParam(required = false) Boolean onlyPublished,
-            @RequestParam(required = false) String category) {
+public Page<PortfolioCardDto> listCards(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "12") int size,
+        @RequestParam(required = false) Boolean onlyPublished,
+        @RequestParam(required = false) String category,
+        @RequestParam(required = false) Long themeId
+) {
+    int p = Math.max(0, page);
+    int sz = Math.max(1, size);
 
-        int p = Math.max(0, page);
-        int sz = Math.max(1, size);
+    // native query 內建 ORDER BY，不另外塞 Sort
+    Pageable pageable = PageRequest.of(p, sz, Sort.unsorted());
 
-        // native query 自己有 ORDER BY，因此這裡不帶 Sort
-        Pageable pageable = PageRequest.of(p, sz, Sort.unsorted());
-        return service.listCards(pageable, onlyPublished, category);
-    }
+    return service.listCards(pageable, onlyPublished, category, themeId);
+}
 
     /* ----------- Detail (作品詳細頁) ----------- */
     @GetMapping("/{id}/detail")
@@ -51,17 +53,24 @@ public class PortfolioItemController {
     @GetMapping
     public Page<PortfolioItemDTO> list(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String sort, // e.g. "displayOrder,desc"
             @RequestParam(required = false) Boolean onlyPublished,
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) Long themeId,
             @RequestParam(required = false) String q) {
-
         int p = Math.max(0, page);
         int sz = Math.max(1, size);
 
-        Sort s = resolveSort(sort);
-        return service.list(PageRequest.of(p, sz, s), onlyPublished, category, q);
+        Sort s = resolveSort(sort); // 你原本的排序解析 helper
+        PageRequest pr = PageRequest.of(p, sz, s);
+
+        return service.list(
+                pr,
+                onlyPublished,
+                category,
+                themeId,
+                q);
     }
 
     /** 安全的排序解析（白名單＋穩定次要排序） */

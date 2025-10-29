@@ -12,12 +12,14 @@ public class PortfolioItemDetailDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<PortfolioImageDTO> images;
+    private Long themeId;
 
-    public PortfolioItemDetailDTO() {}
+    public PortfolioItemDetailDTO() {
+    }
 
     public PortfolioItemDetailDTO(Long id, String title, String description, String category,
-                                  Boolean published, LocalDateTime createdAt, LocalDateTime updatedAt,
-                                  List<PortfolioImageDTO> images) {
+            Boolean published, LocalDateTime createdAt, LocalDateTime updatedAt,
+            List<PortfolioImageDTO> images, Long themeId) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -26,23 +28,78 @@ public class PortfolioItemDetailDTO {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.images = images;
+        this.themeId = themeId;
     }
 
-    public Long getId() { return id; }
-    public String getTitle() { return title; }
-    public String getDescription() { return description; }
-    public String getCategory() { return category; }
-    public Boolean getPublished() { return published; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public List<PortfolioImageDTO> getImages() { return images; }
+    public Long getId() {
+        return id;
+    }
 
-    public void setId(Long id) { this.id = id; }
-    public void setTitle(String title) { this.title = title; }
-    public void setDescription(String description) { this.description = description; }
-    public void setCategory(String category) { this.category = category; }
-    public void setPublished(Boolean published) { this.published = published; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-    public void setImages(List<PortfolioImageDTO> images) { this.images = images; }
+    public String getTitle() {
+        return title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public Boolean getPublished() {
+        return published;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public List<PortfolioImageDTO> getImages() {
+        return images;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public void setPublished(Boolean published) {
+        this.published = published;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public void setImages(List<PortfolioImageDTO> images) {
+        this.images = images;
+    }
+
+    public Long getThemeId() {
+        return themeId;
+    }
+
+    public void setThemeId(Long themeId) {
+        this.themeId = themeId;
+    }
 }

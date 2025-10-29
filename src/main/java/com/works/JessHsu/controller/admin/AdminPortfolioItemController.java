@@ -46,10 +46,11 @@ public class AdminPortfolioItemController {
             @RequestParam(required = false) Boolean onlyPublished,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String sort,
+            @RequestParam(required = false) Long themeId,
             @RequestParam(required = false) String q) {
         Sort s = resolveSort(sort);
         PageRequest pr = PageRequest.of(page, size, s);
-        return service.list(pr, onlyPublished, category, q);
+        return service.list(pr, onlyPublished, category, themeId, q);
     }
 
     private Sort resolveSort(String sort) {

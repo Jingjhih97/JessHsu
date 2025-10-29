@@ -10,6 +10,8 @@ public class PortfolioImageOrderUpdateDTO {
     @NotNull
     private Integer sortOrder; // 新的排序值
 
+    private Long themeId;
+
     public PortfolioImageOrderUpdateDTO() {
     }
 
@@ -32,5 +34,13 @@ public class PortfolioImageOrderUpdateDTO {
 
     public void setSortOrder(Integer sortOrder) {
         this.sortOrder = sortOrder;
+    }
+
+    public Long getThemeId() {
+        return themeId;
+    }
+
+    public void setThemeId(Long themeId) {
+        this.themeId = themeId;
     }
 }

@@ -15,6 +15,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.OrderBy;
@@ -52,7 +53,11 @@ public class PortfolioItem {
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder asc, id asc")
     private List<PortfolioItemImage> images = new ArrayList<>();
-
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "theme_id", referencedColumnName = "id")
+    private Theme theme;
+    
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -61,6 +66,7 @@ public class PortfolioItem {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
 
     // --- getters / setters ---
     public Long getId() {
@@ -137,5 +143,13 @@ public class PortfolioItem {
 
     public void setDisplayOrder(Integer displayOrder) {
         this.displayOrder = displayOrder;
+    }
+
+    public Theme getTheme() {
+        return theme;
+    }
+
+    public void setTheme(Theme theme) {
+        this.theme = theme;
     }
 }

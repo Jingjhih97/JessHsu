@@ -23,6 +23,8 @@ public class PortfolioItemCreateDTO {
 
     private Boolean published;
 
+    private Long themeId;
+
     // ⭐ 新增：一口氣帶入最多 5 張圖片
     @Size(max = 5, message = "最多只能新增 5 張圖片")
     private List<PortfolioImageCreateDTO> images;
@@ -58,4 +60,12 @@ public class PortfolioItemCreateDTO {
 
     public List<PortfolioImageCreateDTO> getImages() { return images; }
     public void setImages(List<PortfolioImageCreateDTO> images) { this.images = images; }
+
+    public Long getThemeId() {
+        return themeId;
+    }
+
+    public void setThemeId(Long themeId) {
+        this.themeId = themeId;
+    }
 }

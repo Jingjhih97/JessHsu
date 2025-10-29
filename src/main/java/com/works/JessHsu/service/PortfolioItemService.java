@@ -23,13 +23,13 @@ public interface PortfolioItemService {
     PortfolioItemDTO update(Long id, PortfolioItemCreateDTO dto);
     void delete(Long id);
     PortfolioItemDTO get(Long id);
-    Page<PortfolioItemDTO> list(Pageable pageable, Boolean onlyPublished, String category, String q);
+    Page<PortfolioItemDTO> list(Pageable pageable, Boolean onlyPublished, String category, Long themeId, String q);
 
     // 詳細頁
     PortfolioItemDetailDTO getDetail(Long id);
 
     // 前台卡片牆（封面圖）列表
-    Page<PortfolioCardDto> listCards(Pageable pageable, Boolean onlyPublished, String category);
+    Page<PortfolioCardDto> listCards(Pageable pageable, Boolean onlyPublished, String category, Long themeId);
 
     List<PortfolioImageDTO> listImages(Long itemId);
 

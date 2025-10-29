@@ -40,6 +40,14 @@ public class PortfolioItemMapper {
         d.setCreatedAt(e.getCreatedAt());
         d.setUpdatedAt(e.getUpdatedAt());
 
+        if (e.getTheme() != null) {
+            d.setThemeId(e.getTheme().getId());
+            d.setThemeName(e.getTheme().getName());
+        } else {
+            d.setThemeId(null);
+            d.setThemeName(null);
+        }
+
         PortfolioItemImage cover = e.getCoverItemImage();
         if (cover != null) {
             d.setCoverCropX(cover.getCropX());
