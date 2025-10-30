@@ -26,7 +26,7 @@ public class AdminThemeController {
     private final PortfolioItemRepository itemRepo;
 
     public AdminThemeController(ThemeRepository themeRepo,
-            PortfolioItemRepository itemRepo) {
+                                PortfolioItemRepository itemRepo) {
         this.themeRepo = themeRepo;
         this.itemRepo = itemRepo;
     }
@@ -44,6 +44,7 @@ public class AdminThemeController {
                     dto.setCreatedAt(t.getCreatedAt());
                     dto.setUsageCount(usage);
                     dto.setImageUrl(t.getImageUrl());
+                    dto.setDescription(t.getDescription());
                     return dto;
                 })
                 .toList();
@@ -52,21 +53,18 @@ public class AdminThemeController {
     // POST /api/admin/themes
     @PostMapping
     public ThemeDTO create(@RequestBody ThemeDTO body) {
-        String name = body.getName();
-        if (name == null || name.trim().isEmpty()) {
+        String name = trimToNull(body.getName());
+        if (name == null) {
             throw new IllegalArgumentException("Theme name is required");
         }
-
-        if (themeRepo.existsByName(name.trim())) {
+        if (themeRepo.existsByName(name)) {
             throw new IllegalStateException("Theme name already exists");
         }
 
         Theme t = new Theme();
-        t.setName(name.trim());
-        t.setImageUrl(body.getImageUrl()); // <== 這行很重要，讓主題封面一起存
-        // createdAt 如果在 Theme entity 上有 @PrePersist 自動塞，那就不用手動 set
-        // 如果沒有自動欄位，請自己塞:
-        // t.setCreatedAt(LocalDateTime.now());
+        t.setName(name);
+        t.setImageUrl(trimToNull(body.getImageUrl()));
+        t.setDescription(trimToNull(body.getDescription()));
 
         Theme saved = themeRepo.save(t);
 
@@ -76,56 +74,55 @@ public class AdminThemeController {
         dto.setCreatedAt(saved.getCreatedAt());
         dto.setUsageCount(0L);
         dto.setImageUrl(saved.getImageUrl());
+        dto.setDescription(saved.getDescription());
         return dto;
     }
 
     // DELETE /api/admin/themes/{id}
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
-
-        // 1. 確認存在
         Theme t = themeRepo.findById(id)
                 .orElseThrow(() -> new NotFoundException("Theme " + id + " not found"));
 
-        // 2. 確認沒人用
         long usageCount = itemRepo.countByTheme_Id(id);
         if (usageCount > 0) {
-            // 你也可以回傳 409 Conflict，這裡先丟 runtime exception
+            // 也可以改成回 409 Conflict 的全域例外處理
             throw new IllegalStateException("This theme is still used by some portfolio items");
         }
 
-        // 3. 刪除
         themeRepo.delete(t);
     }
 
+    // PUT /api/admin/themes/{id}
     @PutMapping("/{id}")
-    public ThemeDTO update(
-            @PathVariable Long id,
-            @RequestBody ThemeUpdateDTO body) {
-
+    public ThemeDTO update(@PathVariable Long id, @RequestBody ThemeUpdateDTO body) {
         Theme t = themeRepo.findById(id)
                 .orElseThrow(() -> new NotFoundException("Theme " + id + " not found"));
 
-        // 更新 name（如果有傳）
-        if (body.getName() != null && !body.getName().trim().isEmpty()) {
-            String newName = body.getName().trim();
-
-            // 如果真的改名，檢查重複
-            if (!newName.equalsIgnoreCase(t.getName())
-                    && themeRepo.existsByName(newName)) {
+        // name（可選）
+        if (body.getName() != null) {
+            String newName = trimToNull(body.getName());
+            if (newName == null) {
+                // 若前端明確傳入空字串，視為要清空 -> 不允許，避免出現無名主題
+                throw new IllegalArgumentException("Theme name cannot be empty");
+            }
+            if (!newName.equalsIgnoreCase(t.getName()) && themeRepo.existsByName(newName)) {
                 throw new IllegalStateException("Theme name already exists");
             }
-
             t.setName(newName);
         }
 
-        // 更新圖片（允許清空、覆蓋）
+        // imageUrl（可選，允許清空）
         if (body.getImageUrl() != null) {
-            t.setImageUrl(body.getImageUrl());
+            t.setImageUrl(trimToNull(body.getImageUrl()));
+        }
+
+        // ✅ description（可選，允許清空）
+        if (body.getDescription() != null) {
+            t.setDescription(trimToNull(body.getDescription()));
         }
 
         Theme saved = themeRepo.save(t);
-
         long usage = itemRepo.countByTheme_Id(saved.getId());
 
         ThemeDTO dto = new ThemeDTO();
@@ -134,6 +131,14 @@ public class AdminThemeController {
         dto.setCreatedAt(saved.getCreatedAt());
         dto.setUsageCount(usage);
         dto.setImageUrl(saved.getImageUrl());
+        dto.setDescription(saved.getDescription()); // ✅ 帶回描述
         return dto;
+    }
+
+    // ===== helpers =====
+    private static String trimToNull(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        return t.isEmpty() ? null : t;
     }
 }

@@ -3,6 +3,7 @@ package com.works.JessHsu.dto;
 public class ThemeUpdateDTO {
     private String name;
     private String imageUrl;
+    private String description;
 
     public ThemeUpdateDTO() {}
 
@@ -17,5 +18,13 @@ public class ThemeUpdateDTO {
     }
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

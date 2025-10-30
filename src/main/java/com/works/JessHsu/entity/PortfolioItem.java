@@ -44,20 +44,25 @@ public class PortfolioItem {
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder = 0;
 
+    @Column(name = "serial_no", nullable = false, updatable = false, unique = true)
+    private String serialNo;
+
+    @Column(name = "serial_code", insertable = false, updatable = false, unique = true)
+    private String serialCode; 
+
     // （選擇性）封面圖對應的主圖
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cover_image_id", foreignKey = @jakarta.persistence.ForeignKey(jakarta.persistence.ConstraintMode.NO_CONSTRAINT)
-    )
+    @JoinColumn(name = "cover_image_id", foreignKey = @jakarta.persistence.ForeignKey(jakarta.persistence.ConstraintMode.NO_CONSTRAINT))
     private PortfolioItemImage coverItemImage;
 
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder asc, id asc")
     private List<PortfolioItemImage> images = new ArrayList<>();
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "theme_id", referencedColumnName = "id")
     private Theme theme;
-    
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -66,7 +71,6 @@ public class PortfolioItem {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
 
     // --- getters / setters ---
     public Long getId() {
@@ -152,4 +156,21 @@ public class PortfolioItem {
     public void setTheme(Theme theme) {
         this.theme = theme;
     }
+
+    public String getSerialNo() {
+        return serialNo;
+    }
+
+    public void setSerialNo(String serialNo) {
+        this.serialNo = serialNo;
+    }
+
+    public String getSerialCode() {
+        return serialCode;
+    }
+
+    public void setSerialCode(String serialCode) {
+        this.serialCode = serialCode;
+    }
+
 }

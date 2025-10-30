@@ -1,4 +1,3 @@
-// src/main/java/com/works/JessHsu/service/impl/PortfolioItemServiceImpl.java
 package com.works.JessHsu.service.impl;
 
 import java.util.Comparator;
@@ -11,6 +10,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -35,6 +35,7 @@ import com.works.JessHsu.repository.PortfolioItemRepository;
 import com.works.JessHsu.repository.ThemeRepository;
 import com.works.JessHsu.repository.view.PortfolioCardView;
 import com.works.JessHsu.service.PortfolioItemService;
+import com.works.JessHsu.service.SequenceService;
 
 @Service
 @Transactional
@@ -45,14 +46,24 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
     private final PortfolioItemRepository repo;
     private final PortfolioItemImageRepository imageRepo;
     private final ThemeRepository themeRepo;
+    private final SequenceService sequenceService;
 
     public PortfolioItemServiceImpl(
             PortfolioItemRepository repo,
             PortfolioItemImageRepository imageRepo,
-            ThemeRepository themeRepo) {
+            ThemeRepository themeRepo,
+            SequenceService sequenceService) {
         this.repo = repo;
         this.imageRepo = imageRepo;
         this.themeRepo = themeRepo;
+        this.sequenceService = sequenceService;
+    }
+
+    @Transactional
+    public PortfolioItem createItem(PortfolioItem item) {
+        String serial = sequenceService.nextPortfolioSerial();
+        item.setSerialNo(serial);
+        return repo.save(item);
     }
 
     /* ==================== 封面規則 / 同步 ==================== */
@@ -87,6 +98,7 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
     public PortfolioItemDTO create(PortfolioItemCreateDTO dto) {
         PortfolioItem entity = PortfolioItemMapper.toEntity(dto);
 
+        // ===== 主題設定 =====
         if (dto.getThemeId() != null) {
             var theme = themeRepo.findById(dto.getThemeId())
                     .orElseThrow(() -> new NotFoundException("Theme " + dto.getThemeId() + " not found"));
@@ -95,14 +107,21 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
             entity.setTheme(null);
         }
 
-        // 排序邏輯照舊
+        // ===== 排序順序（displayOrder） =====
         Integer maxOrder = repo.findMaxDisplayOrder();
         int nextOrder = (maxOrder == null ? 0 : maxOrder) + 1;
         entity.setDisplayOrder(nextOrder);
 
+        // ===== 流水號（只生成一次） =====
+        if (entity.getSerialNo() == null || entity.getSerialNo().isBlank()) {
+            String serial = sequenceService.nextPortfolioSerial(); // e.g. W00001
+            entity.setSerialNo(serial);
+        }
+
+        // ===== 儲存作品 =====
         PortfolioItem saved = repo.save(entity);
 
-        // 圖片 + 封面
+        // ===== 處理圖片（封面 + 附圖） =====
         upsertImagesFromDtos(saved.getId(), dto.getCoverImageUrl(), dto.getImages());
         recomputeCover(saved.getId());
 
@@ -114,10 +133,16 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
         PortfolioItem e = repo.findById(id)
                 .orElseThrow(() -> new NotFoundException("PortfolioItem " + id + " not found"));
 
-        // 先更新基本欄位
+        // ✅ 先把舊流水號備份，避免 Mapper 把它蓋掉
+        String originalSerial = e.getSerialNo();
+
+        // 更新基本欄位（Mapper 內不要動 serialNo；就算動了，下一行會還原）
         PortfolioItemMapper.updateEntity(e, dto);
 
-        // 🔥 更新 theme
+        // 還原流水號，確保不被覆蓋成 0 / null
+        e.setSerialNo(originalSerial);
+
+        // 更新主題
         if (dto.getThemeId() != null) {
             var theme = themeRepo.findById(dto.getThemeId())
                     .orElseThrow(() -> new NotFoundException("Theme " + dto.getThemeId() + " not found"));
@@ -128,10 +153,10 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
 
         PortfolioItem saved = repo.save(e);
 
-        // 如果有傳 images，就同步圖片
+        // 若有傳 images 才同步
         boolean touchedImages = (dto.getImages() != null && !dto.getImages().isEmpty());
         if (touchedImages) {
-            upsertImagesFromDtos(saved.getId(), null /* 不再用 cover 決主圖 */, dto.getImages());
+            upsertImagesFromDtos(saved.getId(), null /* 不用 cover 決主圖 */, dto.getImages());
             recomputeCover(saved.getId());
         }
 
@@ -231,6 +256,7 @@ public class PortfolioItemServiceImpl implements PortfolioItemService {
 
         PortfolioItemDetailDTO dto = new PortfolioItemDetailDTO(
                 item.getId(),
+                item.getSerialNo(),
                 item.getTitle(),
                 item.getDescription(),
                 item.getCategory(),

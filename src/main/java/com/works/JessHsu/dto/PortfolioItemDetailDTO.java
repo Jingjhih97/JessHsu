@@ -5,6 +5,7 @@ import java.util.List;
 
 public class PortfolioItemDetailDTO {
     private Long id;
+    private String serialNo;
     private String title;
     private String description;
     private String category;
@@ -17,10 +18,11 @@ public class PortfolioItemDetailDTO {
     public PortfolioItemDetailDTO() {
     }
 
-    public PortfolioItemDetailDTO(Long id, String title, String description, String category,
+    public PortfolioItemDetailDTO(Long id, String serialNo, String title, String description, String category,
             Boolean published, LocalDateTime createdAt, LocalDateTime updatedAt,
             List<PortfolioImageDTO> images, Long themeId) {
         this.id = id;
+        this.serialNo = serialNo;
         this.title = title;
         this.description = description;
         this.category = category;

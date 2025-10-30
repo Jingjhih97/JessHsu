@@ -32,6 +32,7 @@ public class PortfolioItemMapper {
     public static PortfolioItemDTO toDTO(PortfolioItem e) {
         PortfolioItemDTO d = new PortfolioItemDTO();
         d.setId(e.getId());
+        d.setSerialNo(e.getSerialNo());
         d.setTitle(e.getTitle());
         d.setDescription(e.getDescription());
         d.setCoverImageUrl(e.getCoverImageUrl());

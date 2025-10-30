@@ -8,18 +8,20 @@ public class ThemeDTO {
     private LocalDateTime createdAt;
     private String imageUrl;
     private Long usageCount; 
+    private String description;
 
     // ✅ 無參數建構子（給 JPA 或序列化用）
     public ThemeDTO() {
     }
 
     // ✅ 有參數建構子（對應 ThemeController.listAll 用）
-    public ThemeDTO(Long id, String name, LocalDateTime createdAt, String imageUrl, Long usageCount) {
+    public ThemeDTO(Long id, String name, LocalDateTime createdAt, String imageUrl, Long usageCount, String description) {
         this.id = id;
         this.name = name;
         this.createdAt = createdAt;
         this.usageCount = usageCount;
         this.imageUrl = imageUrl;
+        this.description = description;
     }
 
     // ✅ Getter / Setter
@@ -61,5 +63,13 @@ public class ThemeDTO {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public class PortfolioItemDTO {
     private Long id;
+    private String serialNo;
     private String title;
     private String description;
     private String coverImageUrl;
@@ -134,6 +135,14 @@ public class PortfolioItemDTO {
 
     public void setThemeName(String themeName) {
         this.themeName = themeName;
+    }
+
+    public String getSerialNo() {
+        return serialNo;
+    }
+
+    public void setSerialNo(String serialNo) {
+        this.serialNo = serialNo;
     }
 
 }
