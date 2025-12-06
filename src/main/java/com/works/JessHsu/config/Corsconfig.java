@@ -1,4 +1,3 @@
-// src/main/java/com/works/JessHsu/config/CorsConfig.java
 package com.works.JessHsu.config;
 
 import java.util.List;
@@ -16,8 +15,12 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
 
-        // 你的前端開發網址（不要用 * ）
-        c.setAllowedOrigins(List.of("http://localhost:5173"));
+        c.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "https://www.yoodesigns.com"
+                //"http://18.209.58.255",
+                //"http://api.yoodesigns.com"
+                ));
 
         // 允許跨域時夾帶 cookie / session
         c.setAllowCredentials(true);
@@ -26,7 +29,12 @@ public class CorsConfig {
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
         // 前端可以送的 header
-        c.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
+        c.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "Accept",
+                "Origin"));
 
         // 回應時前端可讀到的 header（可留空或列一些）
         c.setExposedHeaders(List.of("Location"));

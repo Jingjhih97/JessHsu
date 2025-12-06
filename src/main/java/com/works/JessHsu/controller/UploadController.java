@@ -8,7 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import jakarta.validation.constraints.NotNull;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import jakarta.validation.constraints.NotNull;
 import net.coobird.thumbnailator.Thumbnails;
 import net.coobird.thumbnailator.tasks.UnsupportedFormatException;
 
@@ -28,14 +28,15 @@ public class UploadController {
   private final String uploadDir = "uploads";
   // 只允許常見、穩定格式，避免 HEIC/WEBP
   private static final List<String> ALLOWED_TYPES = List.of(
-      "image/jpeg", "image/jpg", "image/png", "image/gif"
-  );
+      "image/jpeg", "image/jpg", "image/png", "image/gif");
 
-  public record UploadResp(String url, String originalUrl, String thumbnailUrl) {}
+  public record UploadResp(String url, String originalUrl, String thumbnailUrl) {
+  }
 
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public UploadResp upload(@RequestPart("file") @NotNull MultipartFile file) throws Exception {
-    if (file.isEmpty()) throw new IllegalArgumentException("空檔案");
+    if (file.isEmpty())
+      throw new IllegalArgumentException("空檔案");
     var contentType = file.getContentType();
     if (contentType == null || ALLOWED_TYPES.stream().noneMatch(contentType::equalsIgnoreCase)) {
       throw new IllegalArgumentException("僅支援上傳 JPG / PNG / GIF 圖片");
@@ -45,7 +46,8 @@ public class UploadController {
 
     // 原始副檔名（原檔保留原始），導出版本一律 jpg
     String ext = StringUtils.getFilenameExtension(file.getOriginalFilename());
-    if (ext == null || ext.isBlank()) ext = "jpg";
+    if (ext == null || ext.isBlank())
+      ext = "jpg";
     ext = ext.toLowerCase();
 
     String base = "%d-%s".formatted(Instant.now().toEpochMilli(), UUID.randomUUID());
@@ -84,13 +86,13 @@ public class UploadController {
     }
 
     // 4) 相對路徑
-    String originalRel  = "/uploads/" + originalName;
-    String webRel       = "/uploads/" + webName;
+    String originalRel = "/uploads/" + originalName;
+    String webRel = "/uploads/" + webName;
     String thumbnailRel = "/uploads/" + thumbName;
 
     // 5) 絕對 URL 回前端
-    String originalUrl  = ServletUriComponentsBuilder.fromCurrentContextPath().path(originalRel).toUriString();
-    String url          = ServletUriComponentsBuilder.fromCurrentContextPath().path(webRel).toUriString();
+    String originalUrl = ServletUriComponentsBuilder.fromCurrentContextPath().path(originalRel).toUriString();
+    String url = ServletUriComponentsBuilder.fromCurrentContextPath().path(webRel).toUriString();
     String thumbnailUrl = ServletUriComponentsBuilder.fromCurrentContextPath().path(thumbnailRel).toUriString();
 
     return new UploadResp(url, originalUrl, thumbnailUrl);
