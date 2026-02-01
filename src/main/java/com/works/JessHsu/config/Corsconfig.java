@@ -17,6 +17,7 @@ public class CorsConfig {
 
         c.setAllowedOrigins(List.of(
                 "http://localhost:5173",
+                "https://yoodesigns.com",
                 "https://www.yoodesigns.com"
                 //"http://18.209.58.255",
                 //"http://api.yoodesigns.com"
